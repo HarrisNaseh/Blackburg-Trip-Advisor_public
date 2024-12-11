@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-5">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <legend>Add Event</legend>
+        <div class="form-group">
+            {{ form.name.label }}
+            {{ form.name(class="form-control", size=32) }}
+            {% for error in form.name.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.start.label }}
+            {{ form.start(class="form-control", size=32) }}
+            {% for error in form.start.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.end.label }}
+            {{ form.end(class="form-control", size=32) }}
+            {% for error in form.end.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.location.label }}
+            {{ form.location(class="form-control", size=32) }}
+            {% for error in form.location.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.description.label }}
+            {{ form.description(class="form-control", size=32) }}
+            {% for error in form.description.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <!-- <div class="form-group">
+            {{ form.categories.label }}
+            {{ form.categories(class="form-control", size=32) }}
+            {% for error in form.categories.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div> -->
+
+        <div class="d-flex justify-content-between"> 
+            <a href="{{ url_for('events') }}" class="btn btn-secondary mt-1">
+                <i class="material-icons"></i> Cancel
+            </a>
+            {{ form.submit(class="btn btn-primary mt-1") }}
+        </div>
+    </form>
+</div>
+{% endblock content %}

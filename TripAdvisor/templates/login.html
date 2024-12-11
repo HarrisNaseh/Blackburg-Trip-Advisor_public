@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.username.label }}
+        {{ form.username(class="form-control", size=64) }}
+        {% for error in form.username.errors %}
+        <small class="text-danger">{{ error }}</small>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.password.label }}
+        {{ form.password(class = "form-control")}}
+        {% for error in form.password.errors %}
+        <small class="text-danger">{{ error }}</small>
+        {% endfor %}
+    </div>
+    <div class="d-flex justify-content-between">
+        {{form.submit(class = "btn btn-primary")}}
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            <i class="material-icons">Cancel</i>
+        </a>
+    </div>
+
+    <small class="text-muted ml-2">
+        <a href="#">Forgot Password?</a>
+    </small>
+</form>
+
+
+{% endblock content%}

@@ -1,0 +1,279 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Search Bar -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="GET" action="/search">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="query" placeholder="Search for events or restaurants" aria-label="Search">
+                    <label for="start_date" class="input-group-text">Start Date:</label>
+                    <input type="datetime-local" id="start_date" name="start_date" class="form-control">
+                    <label for="end_date" class="input-group-text">End Date:</label>
+                    <input type="datetime-local" id="end_date" name="end_date" class="form-control">
+                    <label for="event_type" class="input-group-text">Event Type:</label>
+                    <select id="event_type" name="event_type" class="form-select">
+                        <option value="All">All</option>
+                        <option value="Online">Online</option>
+                        <option value="In-Person">In-Person</option>
+                    </select>
+                    <button class="btn btn-outline-primary" type="submit">Search</button>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Map and Search Results -->
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-md-6">
+            <div id="map" style="height: 500px; width: 100%;" class="border rounded"></div>
+            <div id="map-error" class="alert alert-danger mt-2" style="display: none;"></div>
+        </div>
+
+        <!-- Events Section -->
+        <div class="col-md-6">
+            <h3>Events</h3>
+            <div class="list-group mb-4">
+                {% if events %}
+                {% for event in events %}
+                <div class="list-group-item list-group-item-action" id="event-{{ loop.index }}">
+                    <h5 class="mb-1">
+                        <a href="javascript:void(0);" onclick="toggleDescription('{{ loop.index }}')" class="maroon-link">
+                            {{ event.Name }}
+                        </a>
+                    </h5>
+                    <small>
+                        <strong>Location:</strong>
+                        <a href="javascript:void(0);" onclick="searchLocation('event', '{{ event.Location }}')" class="location-link">
+                            {{ event.Location }}
+                        </a>
+                        | <strong>Date:</strong> {{ event.Start }}
+                    </small>
+                    <div id="description-{{ loop.index }}" class="event-description" style="display: none;">
+                        <p class="mb-1">{{ event.Description }}</p>
+
+                        <!-- Email Subscription Section -->
+                        <div class="email-subscription mt-2">
+                            <div class="input-group">
+                                <input type="email" class="form-control" id="email-{{ loop.index }}" placeholder="Enter your email">
+                                <button class="btn btn-primary" id="send-email-{{ loop.index }}">
+                                    Send Email
+                                </button>
+
+                                <script>
+    document.getElementById("send-email-{{ loop.index }}").addEventListener('click', function() {
+        sendEventEmail(
+            "{{ event.Name }}",
+            "{{ event.Location }}",
+            "{{ event.Start }}",
+            "{{ event.Description|replace('\"', '\\\"')|replace('\'', '\\\'')|replace('\n', '\\n') }}",
+            "{{ loop.index }}"
+        );
+    });
+                                </script>
+                            </div>
+                            <small id="email-status-{{ loop.index }}" class="text-muted"></small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p>No events found.</p>
+                {% endif %}
+            </div>
+
+            <!-- Restaurants Section -->
+            <h3>Restaurants</h3>
+            <div class="list-group">
+                {% if restaurants %}
+                {% for restaurant in restaurants %}
+                <div class="list-group-item list-group-item-action" id="restaurant-{{ loop.index }}">
+                    <h5 class="mb-1">
+                        <a href="javascript:void(0);" onclick="searchLocation('restaurant', '{{ restaurant.Name }}', '{{ restaurant.Address }}')" class="location-link">
+                            {{ restaurant.Name }}
+                        </a>
+                    </h5>
+
+                    <p class="mb-1">{{ restaurant.Address }}</p>
+                   
+                </div>
+                {% endfor %}
+                {% else %}
+                <p>No restaurants found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+    // Global variables
+    let map;
+    let marker;
+    let placesService;
+    let infoWindow;
+
+    // Utility function to show map errors
+    function showMapError(message) {
+        const errorDiv = document.getElementById('map-error');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    // Wait for Google Maps API to load
+    function waitForGoogleMaps(callback, maxAttempts = 20) {
+        let attempts = 0;
+
+        function checkMapsAPI() {
+            if (window.google && window.google.maps && window.google.maps.places) {
+                callback();
+            } else if (attempts < maxAttempts) {
+                attempts++;
+                setTimeout(checkMapsAPI, 500);
+            } else {
+                showMapError('Failed to load Google Maps. Please refresh the page.');
+                console.error('Google Maps API failed to load');
+            }
+        }
+
+        checkMapsAPI();
+    }
+
+    // Initialize the map
+    function initMap() {
+        try {
+            // Default location centered at Blacksburg
+            const defaultLocation = new google.maps.LatLng(37.2296, -80.4139);
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 14,
+                mapTypeControl: false,
+                streetViewControl: false
+            });
+
+            // Default marker at the center
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                title: 'Blacksburg, VA'
+            });
+
+            // Initialize Places Service and Info Window
+            placesService = new google.maps.places.PlacesService(map);
+            infoWindow = new google.maps.InfoWindow();
+        } catch (error) {
+            showMapError('Error initializing map: ' + error.message);
+            console.error('Map initialization error:', error);
+        }
+    }
+
+    // Search location on the map
+    function searchLocation(type, name, address = null) {
+    // Ensure Google Maps is ready
+    if (!window.google || !google.maps || !google.maps.places || !placesService) {
+        showMapError('Maps service is not ready. Please wait and try again.');
+        return;
+    }
+
+    // Construct the full query
+    const fullQuery = address
+        ? `${name}, ${address}`
+        : name;
+
+    // Use Google Places API to locate the place
+    placesService.findPlaceFromQuery(
+        {
+            query: fullQuery,
+            fields: ['geometry', 'name', 'formatted_address']
+        },
+        function (results, status) {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                const location = results[0].geometry.location;
+                map.setCenter(location);
+
+                // Update marker
+                marker.setPosition(location);
+                marker.setTitle(results[0].name);
+                map.setZoom(16);
+
+                // Display details in an info window
+                const infoContent = `
+                    <div>
+                        <strong>${results[0].name}</strong><br>
+                        ${results[0].formatted_address}
+                    </div>
+                `;
+                infoWindow.setContent(infoContent);
+                infoWindow.open(map, marker);
+            } else {
+                showMapError(`Could not find location: ${name}`);
+            }
+        }
+    );
+}
+
+
+    // Toggle event description visibility
+    function toggleDescription(index) {
+        const descriptionElement = document.getElementById(`description-${index}`);
+        descriptionElement.style.display =
+            descriptionElement.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Email.js Initialization
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize EmailJS with your User ID
+        emailjs.init("-igenr0gA3utLqjGQ");
+
+        // Load Google Maps API
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key={{google_key}}&libraries=places&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    });
+
+    // Send Event Email Function
+    function sendEventEmail(eventName, eventLocation, eventDate, eventDescription, index) {
+        const emailInput = document.getElementById(`email-${index}`);
+        const emailStatusElement = document.getElementById(`email-status-${index}`);
+        const emailAddress = emailInput.value.trim();
+
+        // Basic email validation
+        if (!emailAddress || !isValidEmail(emailAddress)) {
+            emailStatusElement.innerHTML = '<span class="text-danger">Please enter a valid email address.</span>';
+            return;
+        }
+
+        // Prepare email parameters
+        const templateParams = {
+            event_name: eventName,
+            event_location: eventLocation,
+            event_date: eventDate,
+            event_description: eventDescription,
+            user_email: emailAddress
+        };
+
+        // Send email using EmailJS
+        emailjs.send("service_ih3iosg", "template_352puty", templateParams)
+            .then(function (response) {
+                emailStatusElement.innerHTML = '<span class="text-success">Event details sent successfully!</span>';
+                emailInput.value = ''; // Clear email input
+                console.log('Email sent!', response.status, response.text);
+            }, function (error) {
+                emailStatusElement.innerHTML = '<span class="text-danger">Failed to send email. Please try again.</span>';
+                console.error('Email send failed:', error);
+            });
+    }
+
+    // Email validation function
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+</script>
+{% endblock %}

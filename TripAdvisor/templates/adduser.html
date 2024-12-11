@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-5">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <legend>Add Admin</legend>
+        <div class="form-group">
+            {{ form.first_name.label }}
+            {{ form.first_name(class="form-control") }}
+            {% for error in form.first_name.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.last_name.label }}
+            {{ form.last_name(class="form-control") }}
+            {% for error in form.last_name.errors %}
+                <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+
+        <div class="form-group">
+            {{ form.username.label }}
+            {{ form.username(class="form-control", size=64) }}
+            {% for error in form.username.errors %}
+            <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.password.label }}
+            {{ form.password(class = "form-control")}}
+            {% for error in form.password.errors %}
+            <small class="text-danger">{{ error }}</small>
+            {% endfor %}
+        </div>
+        
+        <div class="d-flex justify-content-between"> 
+            <a href="{{ url_for('events') }}" class="btn btn-secondary">
+                <i class="material-icons"></i> Cancel
+            </a>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>    
+</div>
+{% endblock content%}

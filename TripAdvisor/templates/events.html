@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="table-responsive">
+    <table class="table table-hover table-bordered">
+        <thead class="thead-light">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Location</th>
+                {%if current_user.is_authenticated%}
+                <th>Edit</th>
+                <th>Delete</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for event in events %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <a href="javascript:void(0);" onclick="toggleDescription('{{ loop.index }}')">{{ event.Name }}</a>
+                    </td>
+                    <td>{{ event.Start }}</td>
+                    <td>{{ event.End }}</td>
+                    <td>{{ event.Location }}</td>
+
+                    {%if not event.Gobbler and current_user.is_authenticated%}
+                 
+                        <td>
+                            <a href="{{ url_for('editEvent', event_id=event.id) }}" class="btn btn-sm btn-warning">
+                                <i class="material-icons"></i> Edit
+                            </a>
+                        </td>
+                        <td>
+                            <form action="{{ url_for('deleteEvent', event_id=event.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this event?');">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="material-icons"></i> Delete
+                                </button>
+                            </form>
+                        </td>
+                    {% endif %}
+                </tr>
+                <tr id="description-{{ loop.index }}" style="display: none;">
+                    <td colspan="5">
+                        <strong>Description:</strong> {{ event.Description }}
+                    </td>
+                </tr>
+
+            {% else %}
+                <tr>
+                    <td colspan="5">No Events Available</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <nav>
+        <ul class="pagination">
+            {% if page > 2 %}
+                <li><a href="{{ url_for('events', page=page-1) }}" style="text-decoration: none;">Previous</a></li>
+            {% endif %}
+            {% for p in range(1, total_pages + 1) %}
+                <li style = "{{ 'font-weight: bolder;' if p == page else '' }}">
+                    <a href="{{ url_for('events', page=p) }}">{{ p }}</a>
+                </li>
+            {% endfor %}
+            {% if page < total_pages %}
+                <li><a href="{{ url_for('events', page=page+1) }}" style="text-decoration: none;">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+
+
+<script>
+// JavaScript to handle showing/hiding event descriptions
+function toggleDescription(index) {
+    const descriptionRow = document.getElementById(`description-${index}`);
+    if (descriptionRow.style.display === 'none') {
+        descriptionRow.style.display = 'table-row';
+    } else {
+        descriptionRow.style.display = 'none';
+    }
+}
+</script>
+
+{% endblock content %}

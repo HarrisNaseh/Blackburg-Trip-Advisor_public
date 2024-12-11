@@ -1,0 +1,132 @@
+/* styles.css */
+
+/* Existing styles */
+.bg-custom {
+    background-color: #861F41;  
+    color: #ffffff;  
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+/* header {
+    background-color: #861F41;
+    color: white;
+    padding: 10px;
+    text-align: center;
+} */
+
+/* Event links */
+.maroon-link {
+    color: #861F41; /* Maroon color for Name of Event */
+    text-decoration: none; /* Remove underline by default */
+}
+
+.maroon-link:hover {
+    text-decoration: underline; /* Underline on hover for better UX */
+}
+
+  
+  .bg-steel {
+    background-color: #5f788a;
+  }
+  
+  .site-header .navbar-nav .nav-link {
+    color: #cbd5db;
+  }
+  
+  .site-header .navbar-nav .nav-link:hover {
+    color: #ffffff;
+  }
+  
+  .site-header .navbar-nav .nav-link.active {
+    font-weight: 500;
+  }
+  
+  .content-section {
+    background: #ffffff;
+    padding: 10px 20px;
+    border: 1px solid #dddddd;
+    border-radius: 3px;
+    margin-bottom: 20px;
+  }
+  
+  .article-title {
+    color: #444444;
+  }
+  
+  a.article-title:hover {
+    color: #428bca;
+    text-decoration: none;
+  }
+  
+  .article-content {
+    white-space: pre-line;
+  }
+  
+  .article-img {
+    height: 65px;
+    width: 65px;
+    margin-right: 16px;
+  }
+  
+  .article-metadata {
+    padding-bottom: 1px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #e3e3e3
+  }
+  
+  .article-metadata a:hover {
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .article-svg {
+    width: 25px;
+    height: 25px;
+    vertical-align: middle;
+  }
+  
+  .account-img {
+    height: 125px;
+    width: 125px;
+    margin-right: 20px;
+    margin-bottom: 16px;
+  }
+  
+  .account-heading {
+    font-size: 2.5rem;
+  }
+
+.listing{
+
+  padding: 5px;
+  width: inherit;
+  height: fit-content;
+  background-color: #ecf7f7;
+
+  }
+
+  ul {
+    list-style-type: none;
+  }
+
+  .line-sep{
+    display: block;
+    height: 2px;
+    background-color: gray;
+  }
+
+  .mynavbar{
+    display: flex;
+    justify-content: space-between;
+    align-self: flex-start;
+  }
+
+.pagination{
+  display: flex;
+  justify-content: center;
+  gap: 0.3em;
+
+}

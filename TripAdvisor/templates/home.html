@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Welcome to Blacksburg Travel Advisor!</h1>
+    <p>Find and plan activities in Blacksburg including events, restaurants, and tours!</p>
+
+    <!-- Search Bar Section -->
+    <form method="GET" action="/search">
+        <div class="input-group my-4">
+            <input type="text" class="form-control" name="query" placeholder="Search for events..." aria-label="Search">
+            <label for="start_date" class="input-group-text">Start Date:</label>
+            <input type="datetime-local" id="start_date" name="start_date" class="form-control">
+            <label for="end_date" class="input-group-text">End Date:</label>
+            <input type="datetime-local" id="end_date" name="end_date" class="form-control">
+
+            <!-- Event Type Dropdown -->
+            <label for="event_type" class="input-group-text">Event Type:</label>
+            <select id="event_type" name="event_type" class="form-select">
+                <option value="All">All</option>
+                <option value="Online">Online</option>
+                <option value="In-Person">In-Person</option>
+            </select>
+
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    <div class="row">
+        <!-- Google Map Section -->
+        <div class="col-md-6" id="map">
+            <div style="height: 400px;" id="googleMap"></div>
+            <!-- View All Events Button -->
+            <a href="/events" class="btn mt-4" id="viewAllEventsBtn" style="background-color: #861F41; color: white;">View All Events</a>
+        </div>
+
+        <!-- Events List Section -->
+        <div class="col-md-6" id="eventsList">
+            <!-- Upcoming Events Section -->
+            <h4>Upcoming Events</h4>
+
+            <!-- Sponsored Section for Events -->
+            <div class="sponsored mb-3 p-3 border rounded">
+                <strong>SPONSORED</strong>
+                <p>Contact for your advertisement!</p>
+            </div>
+
+            <div id="upcomingEvents" class="list-group mb-4">
+                {% for event in events[:2] %}
+                <div class="list-group-item list-group-item-action" id="event-{{ loop.index }}">
+                    <h5 class="mb-1">
+                        <a href="javascript:void(0);" onclick="toggleDescription('{{ loop.index }}')" class="maroon-link">
+                            {{ event.Name }}
+                        </a>
+                    </h5>
+                    <small>
+                        <strong>Location:</strong> {{ event.Location }}
+                        | <strong>Date:</strong> {{ event.Start }}
+                    </small>
+                    <div id="description-{{ loop.index }}" class="event-description" style="display: none;">
+                        <p class="mb-1">{{ event.Description }}</p>
+
+                        <!-- NEW: Email Subscription Section for homepage-->
+                        <div class="email-subscription mt-2">
+                            <div class="input-group">
+                                <input type="email" class="form-control" id="email-{{ loop.index }}" placeholder="Enter your email">
+                                <button class="btn btn-primary" id="send-email-{{ loop.index }}">
+                                    Send Email
+                                </button>
+
+                                <script>
+                                // NEW: Added JavaScript to handle email sending for each event
+                                document.getElementById("send-email-{{ loop.index }}").addEventListener('click', function() {
+                                    sendEventEmail(
+                                        "{{ event.Name }}",
+                                        "{{ event.Location }}",
+                                        "{{ event.Start }}",
+                                        "{{ event.Description|replace('\"', '\\\"')|replace('\'', '\\\'')|replace('\n', '\\n') }}",
+                                        "{{ loop.index }}"
+                                    );
+                                });
+                                </script>
+                            </div>
+                            <small id="email-status-{{ loop.index }}" class="text-muted"></small>
+                        </div>
+                        <!-- END of Email Subscription Section -->
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Restaurants Section -->
+            <h4>Restaurants</h4>
+
+            <!-- Sponsored Section for Restaurants -->
+            <div class="sponsored mb-3 p-3 border rounded">
+                <strong>SPONSORED</strong>
+                <p>Contact for your advertisement!</p>
+            </div>
+
+            <div class="list-group">
+                {% for restaurant in restaurants[:2] %}
+                <div class="list-group-item list-group-item-action maroon-link" 
+                     onclick="showRestaurantOnMap('{{ restaurant.Name }}', '{{ restaurant.Address }}')">
+                    <a href="javascript:void(0);" class="mb-1 maroon-link">{{ restaurant.Name }}</a>
+                    <p class="mb-1">{{ restaurant.Address }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+    // Function to update map with restaurant location
+    function showRestaurantOnMap(name, address) {
+        // Use Places Service to search for the restaurant by name and address
+        const request = {
+            query: name + ', ' + address,
+            fields: ['name', 'geometry'],
+        };
+
+        placesService.findPlaceFromQuery(request, function (results, status) {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                const place = results[0];
+
+                // Center the map at the restaurant's location
+                map.setCenter(place.geometry.location);
+
+                // Update the marker position and title
+                marker.setPosition(place.geometry.location);
+                marker.setTitle(name);
+
+                // Optional: Add an info window to show the restaurant's name
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<strong>${name}</strong><br>${address}`,
+                });
+
+                infoWindow.open(map, marker);
+            } else {
+                console.error("Place not found:", status);
+                alert("Sorry, we couldn't locate this restaurant on the map.");
+            }
+        });
+    }
+</script>
+
+<script>
+    // JavaScript to initialize Google Maps and handle search location, toggle event descriptions
+
+    // Global variables
+    let map;
+    let marker;
+    let placesService;
+
+    // Utility function to show map errors
+    function showMapError(message) {
+        const errorDiv = document.getElementById('map-error');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    // Initialize the map
+    function initMap() {
+        try {
+            // Default location centered at Blacksburg
+            const defaultLocation = new google.maps.LatLng(37.2296, -80.4139);
+
+            map = new google.maps.Map(document.getElementById("googleMap"), {
+                center: defaultLocation,
+                zoom: 14,
+                mapTypeControl: false,
+                streetViewControl: false,
+            });
+
+            // Default marker at the center
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                title: "Blacksburg, VA",
+            });
+
+            // Initialize Places Service
+            placesService = new google.maps.places.PlacesService(map);
+        } catch (error) {
+            showMapError("Error initializing map: " + error.message);
+            console.error("Map initialization error:", error);
+        }
+    }
+
+    // Toggle event description visibility
+    function toggleDescription(index) {
+        const descriptionElement = document.getElementById(`description-${index}`);
+        descriptionElement.style.display =
+            descriptionElement.style.display === "none" ? "block" : "none";
+    }
+
+    // Load Google Maps API when DOM is fully loaded
+    document.addEventListener("DOMContentLoaded", function () {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key={{google_key}}&libraries=places&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    });
+</script>
+
+{% endblock %}
